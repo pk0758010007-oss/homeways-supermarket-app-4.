@@ -1,0 +1,123 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Homeways Supermarket</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f4f6f8;color:#222}
+header{background:#0756a5;color:white;padding:20px 16px}
+header h1{margin:0;font-size:25px}
+header p{margin:6px 0 0;color:#ffd166}
+nav{display:flex;gap:8px;padding:12px;background:white;position:sticky;top:0}
+button{border:0;border-radius:8px;padding:11px 14px;background:#0756a5;color:white;cursor:pointer}
+nav button{flex:1}
+main{padding:16px;max-width:900px;margin:auto}
+input{width:100%;padding:13px;border:1px solid #ccc;border-radius:8px;margin-bottom:15px;font-size:16px}
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:12px}
+.card{background:white;border-radius:12px;padding:14px;box-shadow:0 2px 8px #0001}
+.emoji{font-size:42px;text-align:center;background:#edf4fc;padding:15px;border-radius:8px}
+.card h3{font-size:16px;min-height:38px}
+.price{font-weight:bold;color:#0756a5;margin:10px 0}
+.small{font-size:13px;color:#666}
+section{margin-bottom:25px}
+.hidden{display:none}
+.line{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:12px 0;border-bottom:1px solid #ddd}
+footer{text-align:center;background:#0756a5;color:white;padding:20px}
+</style>
+</head>
+<body>
+<header>
+<h1>HOMEWAYS SUPERMARKET</h1>
+<p>Convenience at a low price</p>
+<p>Sokoni Branch | Karibu!</p>
+</header>
+<nav>
+<button onclick="show('home')">Home</button>
+<button onclick="show('products')">Products</button>
+<button onclick="show('cart')">Cart (<span id="count">0</span>)</button>
+</nav>
+<main>
+<section id="home">
+<h2>Welcome to Homeways!</h2>
+<p>Shop your favourite products at great prices.</p>
+<button onclick="show('products')">Start Shopping</button>
+<h3>Why shop with us?</h3>
+<p>🛒 Great value · 🏪 Friendly service · 💙 We got you sorted!</p>
+</section>
+<section id="products" class="hidden">
+<h2>Our Products</h2>
+<input id="search" placeholder="Search products..." oninput="render()">
+<div class="products" id="list"></div>
+<p class="small">Demo catalogue: confirm prices and stock with the store.</p>
+</section>
+<section id="cart" class="hidden">
+<h2>Your Shopping Cart</h2>
+<div id="items"></div>
+<h3 id="total">Total: KSh 0</h3>
+<h3>Checkout details</h3>
+<input id="customer" placeholder="Your full name">
+<input id="phone" placeholder="Phone number">
+<input id="address" placeholder="Delivery location">
+<button onclick="checkout()">Place Demo Order</button>
+<p class="small">This demo does not send orders to the supermarket or process payments.</p>
+</section>
+<section id="orders" class="hidden">
+<h2>Order Confirmation</h2>
+<div id="confirmation"></div>
+<button onclick="show('products')">Continue Shopping</button>
+</section>
+</main>
+<footer>Homeways Supermarket · Convenience at a low price</footer>
+<script>
+const products=[
+{id:1,name:"Nunix Deep Fryer",price:3800,emoji:"🍟"},
+{id:2,name:'Aliyons Smart TV 55"',price:37200,emoji:"📺"},
+{id:3,name:"Nunix Water Dispenser A1",price:11900,emoji:"🚰"},
+{id:4,name:"Nunix Cooker 50×50",price:17500,emoji:"🍳"},
+{id:5,name:"Nunix Cooker 60×60",price:25900,emoji:"🔥"},
+{id:6,name:"Beef (per kg)",price:730,emoji:"🥩"},
+{id:7,name:"Goat Meat (per kg)",price:900,emoji:"🍖"},
+{id:8,name:"Chicken",price:580,emoji:"🍗"}
+];
+let cart={};
+const money=n=>"KSh "+n.toLocaleString("en-KE");
+function show(id){
+document.querySelectorAll("main section").forEach(s=>s.classList.add("hidden"));
+document.getElementById(id).classList.remove("hidden");
+if(id==="cart")renderCart();
+}
+function render(){
+const q=document.getElementById("search").value.toLowerCase();
+document.getElementById("list").innerHTML=products.filter(p=>p.name.toLowerCase().includes(q)).map(p=>
+`<div class="card"><div class="emoji">${p.emoji}</div><h3>${p.name}</h3><div class="price">${money(p.price)}</div><button onclick="add(${p.id})">Add to Cart</button></div>`
+).join("");
+}
+function add(id){cart[id]=(cart[id]||0)+1;updateCount();alert("Added to cart!");}
+function updateCount(){document.getElementById("count").textContent=Object.values(cart).reduce((a,b)=>a+b,0);}
+function renderCart(){
+const entries=Object.entries(cart);
+document.getElementById("items").innerHTML=entries.length?entries.map(([id,qty])=>{
+const p=products.find(x=>x.id===Number(id));
+return `<div class="line"><span>${p.name}<br>${money(p.price)} × ${qty}</span><span><button onclick="changeQty(${id},-1)">−</button> ${qty} <button onclick="changeQty(${id},1)">+</button></span></div>`;
+}).join(""):"Your cart is empty.";
+const total=entries.reduce((sum,[id,qty])=>sum+products.find(p=>p.id===Number(id)).price*qty,0);
+document.getElementById("total").textContent="Total: "+money(total);
+}
+function changeQty(id,n){cart[id]=(cart[id]||0)+n;if(cart[id]<=0)delete cart[id];updateCount();renderCart();}
+function checkout(){
+if(!Object.keys(cart).length){alert("Add products to your cart first.");return;}
+const name=document.getElementById("customer").value.trim();
+const phone=document.getElementById("phone").value.trim();
+const address=document.getElementById("address").value.trim();
+if(!name||!phone||!address){alert("Please fill in your name, phone and delivery location.");return;}
+const total=Object.entries(cart).reduce((s,[id,q])=>s+products.find(p=>p.id===Number(id)).price*q,0);
+document.getElementById("confirmation").innerHTML=`<p>Thank you, ${name}!</p><p>Demo order total: <b>${money(total)}</b></p><p>Phone: ${phone}</p><p>Location: ${address}</p><p><b>This is a demo confirmation only.</b> The supermarket has not received this order.</p>`;
+cart={};updateCount();show("orders");
+}
+render();
+</script>
+</body>
+</html>
